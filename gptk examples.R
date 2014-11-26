@@ -1,0 +1,3 @@
+library(gptk)
+demOptimiseGp
+
