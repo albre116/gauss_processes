@@ -179,7 +179,9 @@ plot(gg)
 
 
 #################################
-####Now generate some sample data
+###Now generate some sample data 
+###Univariate support in X
+###Univariate support in Y
 #################################
 x.star <- seq(-5,5,len=100)
 # Calculate the covariance matrices
@@ -293,6 +295,22 @@ fig<- ggplot(values,aes(x=x,y=y)) +
   scale_y_continuous( name="output, f(x)") +
   xlab("input, x")
 plot(fig)
+
+
+
+#################################
+###Lets switch to the Multivariate Version
+###Multivariate in Y
+###Multivariate in X
+#################################
+
+
+
+
+
+
+
+
 
 
 ####################################################
