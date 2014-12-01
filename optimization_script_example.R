@@ -158,8 +158,8 @@ x <- seq(-5,5,len=50)
 
 # Calculate the covariance matrix
 l=1
-sigma.f=1
-sigma.n=1
+sigma.f=10##this is the variance of the function
+sigma.n=0.1##this is the variance of the noise
 sigma <- K(x,x,l,sigma.f)
 
 # Generate an observed data vector from the process
@@ -169,10 +169,10 @@ truth <- data.frame(x=x, y=mvrnorm(1, rep(0, length(x)), sigma))
 # Plot the result, including error bars on the observed points
 gg <- ggplot(truth, aes(x=x,y=y)) +
   geom_line(colour="red", size=1) +
-  geom_errorbar(aes(x=x,y=NULL,ymin=y-1.96*sigma.n, ymax=y+1.96*sigma.n), width=0.2) +
+  geom_ribbon(aes(ymin=y-1.96*sqrt(sigma.n), ymax=y+1.96*sqrt(sigma.n)),alpha=0.2) +
   geom_point() +
   theme_bw() +
-  scale_y_continuous(lim=c(-4,4), name="output, f(x)") +
+  scale_y_continuous( name="output, f(x)") +
   xlab("input, x")
 
 plot(gg)
@@ -185,11 +185,11 @@ x.star <- seq(-5,5,len=100)
 # Calculate the covariance matrices
 # using the same x.star values as above
 k.xx <- K(truth$x,truth$x,l,sigma.f)
-k.xx <-k.xx+sigma.n^2*diag(1,ncol(k.xx))
+k.xx <-k.xx+sigma.n*diag(1,ncol(k.xx))
 k.xxs <- K(truth$x,x.star,l,sigma.f)
 k.xsx <- K(x.star,truth$x,l,sigma.f)
 k.xsxs <- K(x.star,x.star,l,sigma.f)
-k.xsxs <-k.xsxs+sigma.n^2*diag(1,ncol(k.xsxs))
+k.xsxs <-k.xsxs+sigma.n*diag(1,ncol(k.xsxs))
 
 # These matrix calculations correspond to equation (2.19)
 # in the book.
@@ -200,7 +200,7 @@ cov.f.star <- k.xsxs - k.xsx%*%solve(k.xx)%*%k.xxs
 # This time we'll plot more samples. We could of course
 # simply plot a +/- 2 standard deviation confidence interval
 # as in the book but I want to show the samples explicitly here.
-n.samples <- 2
+n.samples <- 5
 values <- matrix(rep(0,length(x.star)*n.samples), ncol=n.samples)
 for (i in 1:n.samples) {
   values[,i] <- mvrnorm(1, f.bar.star, cov.f.star)
@@ -214,14 +214,86 @@ colnames(values)[3]="y"
 fig2b <- ggplot(values,aes(x=x,y=y)) +
   geom_line(aes(group=variable), colour="grey80") +
   geom_line(data=NULL,aes(x=x.star,y=f.bar.star),colour="red", size=1) +
-  geom_errorbar(data=truth,aes(x=x,y=NULL,ymin=y-1.96*sigma.n, ymax=y+1.96*sigma.n), width=0.2) +
+  geom_ribbon(data=truth,aes(ymin=y-1.96*sqrt(sigma.n), ymax=y+1.96*sqrt(sigma.n)),alpha=0.2) +
   geom_point(data=truth,aes(x=x,y=y)) +
   theme_bw() +
-  scale_y_continuous(lim=c(-4,4), name="output, f(x)") +
+  scale_y_continuous(name="output, f(x)") +
   xlab("input, x")
 plot(fig2b)
 
 ####################################################
+####Use mlegp package to estimate GP parameters
+####################################################
+library(mlegp)
+x<-values$x
+y<-values$y
+
+fit = mlegp(x,y, nugget=0.1 ,nugget.known = 1)
+
+
+summary(fit)
+plot(fit)
+
+fit_preds<-predict(fit,se.fit = TRUE)
+fit_preds$x<-fit$X
+fit_preds$se.fit<-sqrt(fit_preds$se.fit^2+fit$nugget)
+fit_dat<-data.frame(fit_preds)
+
+fig<- ggplot(values,aes(x=x,y=y)) +
+  geom_line(aes(group=variable), colour="grey80") +
+  geom_line(data=fit_dat,aes(x=x,y=fit),colour="red", size=1) +
+  geom_ribbon(data=fit_dat,aes(x=x,y=NULL,ymin=fit-1.96*se.fit, ymax=fit+1.96*se.fit), alpha=0.2) +
+  geom_point(data=truth,aes(x=x,y=y)) +
+  theme_bw() +
+  scale_y_continuous( name="output, f(x)") +
+  xlab("input, x")
+plot(fig)
+
+
+
+
+
+fit = mlegp(x,y,nugget.known = 1)
+
+summary(fit)
+plot(fit)
+
+fit_preds<-predict(fit,se.fit = TRUE)
+fit_preds$x<-fit$X
+fit_preds$se.fit<-sqrt(fit_preds$se.fit^2+fit$nugget)
+fit_dat<-data.frame(fit_preds)
+
+fig<- ggplot(values,aes(x=x,y=y)) +
+  geom_line(aes(group=variable), colour="grey80") +
+  geom_line(data=fit_dat,aes(x=x,y=fit),colour="red", size=1) +
+  geom_ribbon(data=fit_dat,aes(x=x,y=NULL,ymin=fit-1.96*se.fit, ymax=fit+1.96*se.fit), alpha=0.2) +
+  geom_point(data=truth,aes(x=x,y=y)) +
+  theme_bw() +
+  scale_y_continuous( name="output, f(x)") +
+  xlab("input, x")
+plot(fig)
+
+
+fit = mlegp(x,y,nugget.known = 0)
+
+summary(fit)
+plot(fit)
+
+fit_preds<-predict(fit,se.fit = TRUE)
+fit_preds$x<-fit$X
+fit_preds$se.fit<-sqrt(fit_preds$se.fit^2+fit$nugget)
+fit_dat<-data.frame(fit_preds)
+
+fig<- ggplot(values,aes(x=x,y=y)) +
+  geom_line(aes(group=variable), colour="grey80") +
+  geom_line(data=fit_dat,aes(x=x,y=fit),colour="red", size=1) +
+  geom_ribbon(data=fit_dat,aes(x=x,y=NULL,ymin=fit-1.96*se.fit, ymax=fit+1.96*se.fit), alpha=0.2) +
+  geom_point(data=truth,aes(x=x,y=y)) +
+  theme_bw() +
+  scale_y_continuous( name="output, f(x)") +
+  xlab("input, x")
+plot(fig)
+
 
 ####################################################
 ####Set up the marginal likelihood to estimate the parameters
