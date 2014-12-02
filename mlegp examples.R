@@ -34,20 +34,27 @@ plot(fitMulti)
 ###### fit multiple Gaussian processes using principle component weights ######
 
 ## generate functional output ##
-x = seq(-5,5,by=.2)
-p = 1:50
+x = seq(-4,4,by=0.05)
+p = 1:5
 y = matrix(0,length(p), length(x))
 for (i in p) {
-  y[i,] = sin(x) + i + rnorm(length(x), sd  = .01)
+  y[i,] = sin(x) + 0.2*i + rnorm(length(x), sd  = .01)
 }
 
-## we now have 10 functional observations (each of length 100) ##
+## we now have 10 functional observations (each of length 161) ##
 for (i in p) {
   plot(x,y[i,], type = "l", col = i, ylim = c(min(y), max(y)))
   par(new=TRUE)
 }
 
 ## fit GPs to the two most important principle component weights ##
+s<-svd(t(y))
+D <- diag(s$d)
+U<-s$u
+V<-s$v
+
+U%*%D%*%t(V)
+
 numPCs = 2
 fitPC = mlegp(p, t(y), PC.num = numPCs)
 plot(fitPC) ## diagnostics
@@ -73,3 +80,4 @@ sfLibrary(mlegp)
 fitPC = mlegp(p, t(y), PC.num = 2, parallel = TRUE)
 
 ## End(Not run)
+

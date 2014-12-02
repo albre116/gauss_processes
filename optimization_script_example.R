@@ -231,31 +231,7 @@ x<-values$x
 y<-values$y
 
 fit = mlegp(x,y, nugget=0.1 ,nugget.known = 1)
-
-
-summary(fit)
-plot(fit)
-
-fit_preds<-predict(fit,se.fit = TRUE)
-fit_preds$x<-fit$X
-fit_preds$se.fit<-sqrt(fit_preds$se.fit^2+fit$nugget)
-fit_dat<-data.frame(fit_preds)
-
-fig<- ggplot(values,aes(x=x,y=y)) +
-  geom_line(aes(group=variable), colour="grey80") +
-  geom_line(data=fit_dat,aes(x=x,y=fit),colour="red", size=1) +
-  geom_ribbon(data=fit_dat,aes(x=x,y=NULL,ymin=fit-1.96*se.fit, ymax=fit+1.96*se.fit), alpha=0.2) +
-  geom_point(data=truth,aes(x=x,y=y)) +
-  theme_bw() +
-  scale_y_continuous( name="output, f(x)") +
-  xlab("input, x")
-plot(fig)
-
-
-
-
-
-fit = mlegp(x,y,nugget.known = 1)
+plotObservedEffects(fit)
 
 summary(fit)
 plot(fit)
@@ -276,8 +252,11 @@ fig<- ggplot(values,aes(x=x,y=y)) +
 plot(fig)
 
 
-fit = mlegp(x,y,nugget.known = 0)
 
+
+
+fit = mlegp_modified(x,y,nugget.known = 1)
+plotObservedEffects(fit)
 summary(fit)
 plot(fit)
 
@@ -297,14 +276,39 @@ fig<- ggplot(values,aes(x=x,y=y)) +
 plot(fig)
 
 
+fit = mlegp_modified(x,y,nugget.known = 0)
+plotObservedEffects(fit)
+
+summary(fit)
+plot(fit)
+
+fit_preds<-predict(fit,se.fit = TRUE)
+fit_preds$x<-fit$X
+fit_preds$se.fit<-sqrt(fit_preds$se.fit^2+fit$nugget)
+fit_dat<-data.frame(fit_preds)
+
+fig<- ggplot(values,aes(x=x,y=y)) +
+  geom_line(aes(group=variable), colour="grey80") +
+  geom_line(data=fit_dat,aes(x=x,y=fit),colour="red", size=1) +
+  geom_ribbon(data=fit_dat,aes(x=x,y=NULL,ymin=fit-1.96*se.fit, ymax=fit+1.96*se.fit), alpha=0.2) +
+  geom_point(data=truth,aes(x=x,y=y)) +
+  theme_bw() +
+  scale_y_continuous( name="output, f(x)") +
+  xlab("input, x")
+plot(fig)
 
 #################################
 ###Lets switch to the Multivariate Version
 ###Multivariate in Y
 ###Multivariate in X
 #################################
+x1 = kronecker(seq(0,1,by=.25), rep(1,5))
+x2 = rep(seq(0,1,by=.25),5)
+z = 4 * x1 - 2*x2 + x1 * x2 + rnorm(length(x1), sd = 0.001)
 
-
+plotObservedEffects(cbind(x1,x2), z)
+fit = mlegp(cbind(x1,x2), z, param.names = c("x1", "x2"))
+plotObservedEffects(fit)
 
 
 
